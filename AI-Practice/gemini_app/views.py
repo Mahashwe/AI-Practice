@@ -5,12 +5,13 @@ import os
 from .models import GeminiQuery
 
 
-def call_gemini_api(prompt):
+def call_gemini_api(prompt, system_prompt=None):
     """
     Call the Gemini Flash 2.5 API with a given prompt and return the response.
     
     Args:
         prompt (str): The input prompt for the Gemini model
+        system_prompt (str, optional): System instruction to guide the model's behavior
         
     Returns:
         str: The response from the Gemini API
@@ -21,7 +22,11 @@ def call_gemini_api(prompt):
     
     genai.configure(api_key=api_key)
     
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    # Create model with optional system instruction
+    if system_prompt:
+        model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=system_prompt)
+    else:
+        model = genai.GenerativeModel('gemini-2.0-flash')
     
     response = model.generate_content(prompt)
     
@@ -48,11 +53,12 @@ def llm_query(request):
             import json
             data = json.loads(request.body)
             prompt = data.get('prompt')
+            system_prompt = data.get('system_prompt')
             
             if not prompt:
                 return JsonResponse({'error': 'prompt parameter is required'}, status=400)
             
-            response_text = call_gemini_api(prompt)
+            response_text = call_gemini_api(prompt, system_prompt=system_prompt)
             
             query_record = GeminiQuery.objects.create(
                 prompt=prompt,

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 # Page config
-st.set_page_config(page_title="Gemini Chat", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Therapist Chatbot", layout="wide", initial_sidebar_state="expanded")
 
 # Styling
 st.markdown("""
@@ -32,13 +32,27 @@ st.markdown("""
 # API configuration
 API_URL = "http://localhost:8000/api/query/"
 
+# Therapist system prompt
+THERAPIST_PROMPT = """You are a compassionate and professional therapist with expertise in cognitive behavioral therapy, mindfulness-based approaches, and emotional support. 
+
+Guidelines:
+- Listen actively and validate the user's feelings
+- Ask thoughtful clarifying questions to better understand their situation
+- Provide supportive and non-judgmental responses
+- Offer practical coping strategies when appropriate
+- Encourage self-reflection and positive thinking
+- Maintain appropriate professional boundaries
+- Be empathetic, warm, and genuine in your responses
+
+Remember: This is an AI-assisted conversation for support and guidance, not a replacement for professional mental health treatment."""
+
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Header
-st.title("🤖 Gemini Chat Interface")
-st.markdown("Chat with Gemini Flash 2.0 AI powered by Django API")
+st.title("🧠 Therapist Chatbot")
+st.markdown("Chat with your AI therapist powered by Gemini Flash 2.0")
 
 # Sidebar
 with st.sidebar:
@@ -54,14 +68,17 @@ with st.sidebar:
     st.metric("Total Messages", len(st.session_state.messages))
     
     st.divider()
-    st.subheader("ℹ️ Info")
+    st.subheader("ℹ️ About")
     st.info("""
-    **Model:** Gemini Flash 2.0
+    **Model:** Gemini Flash 2.0 Therapist
     
     **Features:**
-    - Real-time chat
+    - Empathetic conversations
+    - Active listening
+    - Coping strategies
     - Message history
-    - Django backend integration
+    
+    **Note:** For serious mental health concerns, please consult a licensed therapist.
     """)
 
 # Main chat display
@@ -70,8 +87,8 @@ chat_container = st.container(height=400, border=True)
 
 with chat_container:
     if len(st.session_state.messages) == 0:
-        st.markdown("### Welcome! 👋")
-        st.markdown("Start chatting with Gemini. Your messages will appear here.")
+        st.markdown("### Welcome 👋")
+        st.markdown("I'm here to listen and support you. Feel free to share what's on your mind. This is a safe space.")
     else:
         for message in st.session_state.messages:
             if message["role"] == "user":
@@ -83,7 +100,7 @@ with chat_container:
             else:
                 st.markdown(f"""
                 <div class="chat-message assistant-message">
-                    <strong>Gemini:</strong> {message["content"]}
+                    <strong>Therapist:</strong> {message["content"]}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -92,7 +109,7 @@ st.divider()
 col1, col2 = st.columns([5, 1])
 
 with col1:
-    user_input = st.text_input("Type your message...", placeholder="Ask me anything...", label_visibility="collapsed")
+    user_input = st.text_input("Type your message...", placeholder="How are you feeling today?", label_visibility="collapsed")
 
 with col2:
     send_button = st.button("Send", use_container_width=True, type="primary")
@@ -107,10 +124,13 @@ if send_button and user_input:
     })
     
     # Show loading indicator
-    with st.spinner("Getting response from Gemini..."):
+    with st.spinner("Therapist is thinking..."):
         try:
-            # Send to API
-            payload = {"prompt": user_input}
+            # Send to API with therapist system prompt
+            payload = {
+                "prompt": user_input,
+                "system_prompt": THERAPIST_PROMPT
+            }
             response = requests.post(api_endpoint, json=payload, timeout=30)
             response.raise_for_status()
             
@@ -140,4 +160,4 @@ if send_button and user_input:
 
 # Footer
 st.divider()
-st.caption("💡 Tip: Make sure your Django server is running on localhost:8000")
+st.caption("💡 Remember: This is an AI therapist for support and guidance, not a replacement for professional mental health care.")
