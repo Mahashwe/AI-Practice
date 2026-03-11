@@ -3,7 +3,46 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 import google.generativeai as genai
 import os
+import re
 from .models import GeminiQuery, UserConversation
+
+
+def extract_keywords(text, num_keywords=5):
+    """
+    Extract keywords from text using a simple approach.
+    Filters out common stop words and returns top keywords.
+    
+    Args:
+        text (str): The text to extract keywords from
+        num_keywords (int): Number of keywords to extract
+        
+    Returns:
+        str: Comma-separated keywords
+    """
+    # Common English stop words
+    stop_words = {
+        'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 
+        'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'or', 'that', 
+        'the', 'to', 'was', 'will', 'with', 'what', 'which', 'who', 'why',
+        'how', 'when', 'where', 'user', 'assistant'
+    }
+    
+    # Convert to lowercase and split into words
+    words = re.findall(r'\b\w+\b', text.lower())
+    
+    # Filter out stop words and short words
+    keywords = [word for word in words if word not in stop_words and len(word) > 3]
+    
+    # Count word frequency
+    word_freq = {}
+    for word in keywords:
+        word_freq[word] = word_freq.get(word, 0) + 1
+    
+    # Sort by frequency and get top keywords
+    top_keywords = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:num_keywords]
+    
+    # Return as comma-separated string
+    return ', '.join([word for word, freq in top_keywords])
 
 
 def call_gemini_api(prompt, system_prompt=None):
@@ -72,9 +111,11 @@ def llm_query(request):
                 try:
                     user = User.objects.get(id=user_id)
                     conversation_text = f"User: {prompt}\n\nAssistant: {response_text}"
+                    keywords = extract_keywords(conversation_text)
                     UserConversation.objects.create(
                         user=user,
-                        conversation=conversation_text
+                        conversation=conversation_text,
+                        keywords=keywords
                     )
                 except User.DoesNotExist:
                     return JsonResponse({'error': f'User with id {user_id} not found'}, status=400)
