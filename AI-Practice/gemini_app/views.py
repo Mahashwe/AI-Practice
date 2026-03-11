@@ -1,8 +1,9 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.models import User
 import google.generativeai as genai
 import os
-from .models import GeminiQuery
+from .models import GeminiQuery, UserConversation
 
 
 def call_gemini_api(prompt, system_prompt=None):
@@ -54,6 +55,7 @@ def llm_query(request):
             data = json.loads(request.body)
             prompt = data.get('prompt')
             system_prompt = data.get('system_prompt')
+            user_id = data.get('user_id')
             
             if not prompt:
                 return JsonResponse({'error': 'prompt parameter is required'}, status=400)
@@ -64,6 +66,18 @@ def llm_query(request):
                 prompt=prompt,
                 response=response_text
             )
+            
+            # Save conversation with user if user_id is provided
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                    conversation_text = f"User: {prompt}\n\nAssistant: {response_text}"
+                    UserConversation.objects.create(
+                        user=user,
+                        conversation=conversation_text
+                    )
+                except User.DoesNotExist:
+                    return JsonResponse({'error': f'User with id {user_id} not found'}, status=400)
             
             return JsonResponse({
                 'prompt': prompt,
