@@ -1,10 +1,10 @@
 # 🧠 AI Therapist Chatbot
 
-A compassionate AI-powered therapist chatbot built with Django and Streamlit, powered by Google's Gemini 2.0 Flash model.
+A compassionate AI-powered therapist chatbot built with Django and powered by Google's Gemini 2.0 Flash model.
 
 ## 📋 Overview
 
-This project combines a Django backend API with a Streamlit frontend to create an accessible, AI-assisted therapy conversation platform. Users can chat with an empathetic AI therapist trained to provide support, active listening, and practical coping strategies.
+This project provides a Django backend API for an AI-assisted therapy conversation platform. Users can chat with an empathetic AI therapist trained to provide support, active listening, and practical coping strategies. An HTML/CSS/JS frontend will be added in the next phase.
 
 **⚠️ Important Disclaimer:** This is an AI-assisted conversation tool for emotional support and guidance only. It is NOT a replacement for professional mental health treatment. For serious mental health concerns, please consult a licensed therapist or mental health professional.
 
@@ -16,27 +16,20 @@ This project combines a Django backend API with a Streamlit frontend to create a
 - **Chat History:** All conversations are saved locally for reference
 - **Real-time Responses:** Fast, streaming responses powered by Gemini 2.0 Flash
 - **Professional Guidelines:** Responses follow therapeutic best practices
-- **Clean UI:** User-friendly Streamlit interface with message history
+- **User Conversations:** Saves user conversations and extracts keywords for analysis
+- **Django Admin:** Manage conversations and queries through Django admin interface
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Streamlit Frontend                       │
-│                    (Port 8501)                              │
-│  - Chat interface with therapist persona                    │
-│  - Message history & statistics                             │
-│  - System prompt injection for therapeutic behavior         │
-└────────────────────┬────────────────────────────────────────┘
-                     │ HTTP POST /api/query/
-                     ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Django Backend                             │
-│                   (Port 8000)                                │
+│                  Django Backend API                         │
+│                  (Port 8000)                                 │
 │  - REST API endpoint at /api/query/                          │
 │  - Gemini API integration with system instructions           │
-│  - SQLite database for query persistence                     │
+│  - SQLite database for query & conversation persistence      │
 │  - Django admin interface at /admin/                         │
+│  - User conversation tracking & keyword extraction           │
 └────────────────────┬────────────────────────────────────────┘
                      │ 
                      ↓
@@ -45,6 +38,8 @@ This project combines a Django backend API with a Streamlit frontend to create a
 │              (Cloud-hosted LLM)                              │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Frontend Coming Next:** HTML/CSS/JavaScript interface will be added to interact with this API.
 
 ## 🚀 Quick Start
 
@@ -88,54 +83,58 @@ This project combines a Django backend API with a Streamlit frontend to create a
 
 ### Running the Application
 
-**Terminal 1 - Start Django Backend:**
+**Start Django Backend:**
 ```bash
 cd AI-Practice
 python manage.py runserver
 ```
 Backend will be available at `http://localhost:8000`
+Admin interface at `http://localhost:8000/admin/`
 
-**Terminal 2 - Start Streamlit Frontend:**
+**Access API Endpoints:**
+- Chat API: `POST http://localhost:8000/api/query/`
+- Admin Panel: `http://localhost:8000/admin/`
+
+**Note:** Frontend is under development. Currently, test the API using curl or Postman.
+
+## 📖 How to Use the API
+
+### Test with Postman or curl:
+
+**Example 1 - Basic Query:**
 ```bash
-streamlit run streamlit_app.py
-```
-Frontend will be available at `http://localhost:8501`
-
-## 📖 How to Use
-
-1. Open your browser to `http://localhost:8501`
-2. Type your message or concern in the input field
-3. Press "Send" and wait for the therapist's response
-4. Continue the conversation naturally
-5. Use "Clear Chat History" in the sidebar to start fresh
-6. Adjust the API endpoint in settings if needed
-
-### Example Conversations
-
-**Example 1 - Anxiety Support:**
-```
-User: I'm feeling really anxious about my job interview tomorrow
-Therapist: That's completely understandable - job interviews can feel nerve-wracking. 
-Can you tell me more about what specifically makes you anxious? Is it about the questions 
-they might ask, or something else?
+curl -X POST http://localhost:8000/api/query/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "I'm feeling anxious about my job interview",
+    "user_id": 1
+  }'
 ```
 
-**Example 2 - Stress Management:**
+**Example 2 - With Custom System Prompt:**
+```bash
+curl -X POST http://localhost:8000/api/query/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "I'm feeling overwhelmed",
+    "system_prompt": "You are a compassionate therapist",
+    "user_id": 1
+  }'
 ```
-User: Work has been overwhelming lately. I don't know how to manage everything
-Therapist: It sounds like you're carrying a lot right now. Let's break this down together.
-What are the top 3 things that are making you feel most overwhelmed?
-```
+
+### View Conversations in Django Admin:
+1. Go to `http://localhost:8000/admin/`
+2. Login with admin credentials
+3. Click on **User Conversations** to view all saved conversations
+4. Search by username or keywords
 
 ## 🛠️ Project Structure
 
 ```
 project/
-├── streamlit_app.py              # Main Streamlit chat interface
 ├── requirements.txt              # Python dependencies
 ├── THERAPIST_CHATBOT_README.md   # This file
 ├── GEMINI_APP_README.md          # Django app documentation
-├── STREAMLIT_GUIDE.md            # Streamlit setup guide
 └── AI-Practice/
     ├── manage.py                 # Django management
     ├── main.py                   # Entry point (empty)
@@ -143,13 +142,14 @@ project/
     │   ├── settings.py           # Django configuration
     │   ├── urls.py               # URL routing
     │   └── wsgi.py               # WSGI configuration
+    ├── db.sqlite3                # SQLite database
     └── gemini_app/               # Therapist chatbot application
-        ├── models.py             # GeminiQuery database model
+        ├── models.py             # GeminiQuery & UserConversation models
         ├── views.py              # API endpoint & Gemini integration
         ├── urls.py               # App URL patterns
         ├── admin.py              # Django admin configuration
         ├── apps.py               # App configuration
-        └── example.py            # Usage examples
+        └── migrations/           # Database migrations
 ```
 
 ## 📊 Therapist System Prompt
@@ -188,13 +188,33 @@ Access the database through Django Admin:
 
 ## 📚 Technologies Used
 
+The AI is guided by a therapeutic system prompt to ensure compassionate, professional responses.
+
+## 📱 Database Models
+
+### GeminiQuery
+Store individual queries and responses:
+- `prompt`: User's message
+- `response`: AI's response  
+- `created_at`: Timestamp
+
+### UserConversation (New)
+Store user conversations with keyword extraction:
+- `user`: Foreign key to User
+- `conversation`: Full conversation text
+- `keywords`: Extracted keywords
+- `created_at`: When conversation started
+- `updated_at`: Last update time
+
+## 📚 Technologies Used
+
 | Technology | Version | Purpose |
 |-----------|---------|---------|
 | Django | 5.2.11 | Backend web framework |
-| Streamlit | 1.31.0 | Frontend chat interface |
 | google-generativeai | 0.7.2 | Gemini API client |
 | requests | 2.31.0 | HTTP client library |
 | SQLite | Built-in | Database |
+| HTML/CSS/JS | Coming | Frontend interface (in progress) |
 
 ## 🔒 Security & Privacy Notes
 
@@ -224,13 +244,14 @@ Access the database through Django Admin:
 ## 🐛 Troubleshooting
 
 ### Issue: "Cannot connect to Django API"
-- **Solution:** Make sure Django is running on Terminal 1 at `http://localhost:8000`
+- **Solution:** Make sure Django is running at `http://localhost:8000`
+- Run: `python manage.py runserver`
 
 ### Issue: "GEMINI_API_KEY environment variable not set"
 - **Solution:** Set your API key (see Installation section)
 
-### Issue: "Request timeout"
-- **Solution:** Increase timeout in streamlit_app.py or check internet connection
+### Issue: "User with id not found"
+- **Solution:** Create users in Django admin first or query without user_id
 
 ### Issue: "Database locked"
 - **Solution:** Close all connections and ensure only one Django instance is running
@@ -264,10 +285,18 @@ print(response.json())
 
 To modify or extend this project:
 
-1. Update the system prompt in `streamlit_app.py` (THERAPIST_PROMPT variable)
+1. Update the system prompt in `gemini_app/views.py` or via API parameter
 2. Add new therapeutic approaches in the system prompt
-3. Customize the UI styling in the HTML/CSS section
-4. Modify the database model if needed in `gemini_app/models.py`
+3. Customize the Django models in `gemini_app/models.py` as needed
+4. Frontend will be added using HTML/CSS/JavaScript
+
+## 🔜 Next Steps
+
+- [ ] Build HTML/CSS/JavaScript frontend
+- [ ] Add user authentication
+- [ ] Implement conversation filtering and search
+- [ ] Add analytics dashboard
+- [ ] Production deployment setup
 
 ## 📄 License
 
